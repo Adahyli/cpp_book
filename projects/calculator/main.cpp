@@ -20,6 +20,8 @@ public:
 
 };
 
+
+// Token_stream stores a token in a buffer
 class Token_stream {
 public:
     Token get();
@@ -30,11 +32,15 @@ private:
     Token buffer {' '};
 };
 
+
+//declarations
 double expression();
 double term();
 double primary();
 Token_stream ts;
 
+
+//puts a token from input stream into the token stream
 void Token_stream::putback(Token t)
 {
     if (full)
@@ -44,6 +50,8 @@ void Token_stream::putback(Token t)
     full = true;
 }
 
+
+//returns operations into token stream and assigns numbers to value
 Token Token_stream::get()
 {
     if (full) {
@@ -79,26 +87,30 @@ Token Token_stream::get()
     }
 }
 
+
+//parser functions
+//handles + and -
 double expression(){
-    double left = term(); // read and evaluate a Term
-    Token t = ts.get(); // get the next Token from the Token stream
+    double left = term(); 
+    Token t = ts.get(); 
     while (true) {
         switch (t.kind) {
         case '+':
-            left += term(); // evaluate Term and add
+            left += term(); 
             t = ts.get();
             break;
         case '-':
-            left -= term(); // evaluate Term and subtract
+            left -= term(); 
             t = ts.get();
             break;
         default:
-            ts.putback(t); // put t back into the token stream
-            return left; // finally: no more + or -; return the answer
+            ts.putback(t); 
+            return left;
         }
     }
 }
 
+//handles * and /
 double term(){
     double left = primary();
     Token t = ts.get(); // get the next Token from the Token stre
@@ -123,34 +135,37 @@ double term(){
     }
 }
 
+//handles () and numbers
 double primary(){
     Token t = ts.get();
     switch (t.kind) {
-    case '(': // handle ’(’ expression ’)’
+    case '(': 
         {   double d = expression();
             t = ts.get();
             if (t.kind != ')')
             error("')' expected");
             return d;
         }
-    case '8': // we use ’8’ to represent a number
-        return t.value; // return the number’s value
+    case '8': 
+        return t.value; 
     default:
         error("primary expected");
     }
 }
 
+
+
 int main()
 try {
-    double val = 0;  // version 3: 'q' and ';' added
+    double val = 0;  
 
     while (std::cin) {
         Token t = ts.get();
 
-        if (t.kind == 'q')     // 'q' for quit
+        if (t.kind == 'q')     
             break;
 
-        if (t.kind == ';')     // ';' for print now
+        if (t.kind == ';')    
             std::cout << "=" << val << '\n';
 
         else
