@@ -38,7 +38,9 @@ double expression();
 double term();
 double primary();
 Token_stream ts;
-
+void print();
+void quit();
+bool calculate();
 
 //puts a token from input stream into the token stream
 void Token_stream::putback(Token t)
@@ -69,8 +71,8 @@ Token Token_stream::get()
     case '/':
     case '(':
     case ')':
-    case ';':
-    case 'q':
+    case '=':
+    case 'x':
         return Token{ch};
 
     default:
@@ -113,7 +115,7 @@ double expression(){
 //handles * and /
 double term(){
     double left = primary();
-    Token t = ts.get(); // get the next Token from the Token stre
+    Token t = ts.get();
     while (true) {
         switch (t.kind) {
         case '*':
@@ -124,12 +126,12 @@ double term(){
             { double d = primary();
             if (d == 0)
                 error("divide by zero");
-                left /= d;
-                t = ts.get();
-                break;
+            left /= d;
+            t = ts.get();
+            break;
             }
         default:
-            ts.putback(t); // put t back into the Token stream
+            ts.putback(t); 
             return left;
             }
     }
@@ -154,24 +156,52 @@ double primary(){
 }
 
 
+//other functions
+void print(double val)
+{
+    std::cout << "=" << val << '\n';
+}
 
-int main()
-try {
-    double val = 0;  
+bool quit(Token t)
+{
+    return t.kind == 'x';
+}
+
+bool calculate()
+{
+    double val = 0;
 
     while (std::cin) {
         Token t = ts.get();
 
-        if (t.kind == 'q')     
-            break;
+        switch (t.kind) {
+        case 'x':
+            return false;  // tell main to quit
 
-        if (t.kind == ';')    
+        case '=':
             std::cout << "=" << val << '\n';
+            return true;   // expression finished
 
-        else
+        default:
             ts.putback(t);
+            val = expression();
+            break;
+        }
+    }
 
-        val = expression();
+    return false;
+}
+
+int main()
+try {
+    double val = 0;  
+    std::cout << "Welcome to our simple calculator.\n";
+    std::cout << "Please enter expressions using floating-point numbers.\n";
+    std::cout << "Available operators: +, -, *, /, and parentheses.\n";
+    std::cout << "Use '=' to print the result and 'x' to exit.\n";
+
+    while (calculate()){
+
     }
 
     return 0;
