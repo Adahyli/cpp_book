@@ -37,6 +37,7 @@ private:
 double expression();
 double term();
 double primary();
+double factorial();
 Token_stream ts;
 void print();
 void quit();
@@ -71,8 +72,11 @@ Token Token_stream::get()
     case '/':
     case '(':
     case ')':
+    case '{':
+    case '}':
     case '=':
     case 'x':
+    case '!':
         return Token{ch};
 
     default:
@@ -114,16 +118,16 @@ double expression(){
 
 //handles * and /
 double term(){
-    double left = primary();
+    double left = factorial();
     Token t = ts.get();
     while (true) {
         switch (t.kind) {
         case '*':
-            left *= primary();
+            left *= factorial();
             t = ts.get();
             break;
         case '/':
-            { double d = primary();
+            { double d = factorial();
             if (d == 0)
                 error("divide by zero");
             left /= d;
@@ -137,6 +141,27 @@ double term(){
     }
 }
 
+//handles !
+double factorial(){
+    double left = primary();
+    Token t = ts.get();
+
+    if (t.kind != '!') {
+        ts.putback(t);
+        return left;
+    }
+
+    int x = static_cast<int>(left);
+
+    int result = 1;
+
+    for (int i = x; i > 0; --i) {
+        result *= i;
+    }
+
+    return result;
+}
+
 //handles () and numbers
 double primary(){
     Token t = ts.get();
@@ -146,6 +171,13 @@ double primary(){
             t = ts.get();
             if (t.kind != ')')
             error("')' expected");
+            return d;
+        }
+    case '{': 
+        {   double d = expression();
+            t = ts.get();
+            if (t.kind != '}')
+            error("'}' expected");
             return d;
         }
     case '8': 
@@ -197,7 +229,7 @@ try {
     double val = 0;  
     std::cout << "Welcome to our simple calculator.\n";
     std::cout << "Please enter expressions using floating-point numbers.\n";
-    std::cout << "Available operators: +, -, *, /, and parentheses.\n";
+    std::cout << "Available operators: +, -, *, /, !, and parentheses.\n";
     std::cout << "Use '=' to print the result and 'x' to exit.\n";
 
     while (calculate()){
