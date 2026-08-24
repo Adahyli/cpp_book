@@ -9,7 +9,7 @@
 #include <cmath>
 
 constexpr char number = '8';
-constexpr char quit = 'x';
+constexpr char quit = 'q';
 constexpr char print = '=';
 constexpr char printc = ';';
 constexpr std::string prompt = "> ";
@@ -17,6 +17,8 @@ constexpr std::string result = "= ";
 const char name = 'a'; 
 const char let = 'L'; 
 const std::string declkey = "let"; 
+const char sqrt_key = 's';
+const std::string sqrtkey = "sqrt";
 
 
 [[noreturn]] void error(const std::string& e){
@@ -64,15 +66,78 @@ void Token_stream::putback(Token t)
 }
 
 void Token_stream::ignore(char c1,char c2){
-    if (full &&  buffer.kind == c1|| buffer.kind == c2) { 
+    if (full &&  (buffer.kind == c1 || buffer.kind == c2)) { 
         full = false;
         return;
         }
     full = false;
     char ch = 0;
-    while (std::cin>>ch)
+    while (std::cin>>ch){
         if (ch == c1 || ch == c2)
             return;
+    }
+}
+
+//returns operations into token stream and assigns numbers to value and keys to string
+Token Token_stream::get()
+{
+    if (full) {
+        full = false;
+        return buffer;
+    }
+
+    char ch;
+    std::cin >> ch;
+
+    switch (ch) {
+    case '+':
+    case '-':
+    case '*':
+    case '/':
+    case '(':
+    case ')':
+    case '{':
+    case '}':
+    case print:
+    case printc:
+    case quit:
+    case '!':
+    case '%':
+        return Token{ch};
+
+    default:
+        if (std::isdigit(ch)) {
+            std::cin.putback(ch);
+
+            double val;
+            std::cin >> val;
+
+            return Token{number, val};
+        }
+
+        if (std::isalpha(ch)) {
+            std::string s;
+            s += ch;
+            while (std::cin.get(ch) && (isalpha(ch) || isdigit(ch))){
+                if (!std::isalpha(ch) && !std::isdigit(ch))
+                    break;
+
+                s += ch;
+            }
+            if (std::cin)
+                std::cin.putback(ch);
+
+            if (s == declkey)
+                return Token{let};
+
+            if (s == sqrtkey)
+                return Token{sqrt_key};
+
+
+            return Token{name, s};
+        }
+        error("Bad token");
+    }
 }
 
 
@@ -114,58 +179,6 @@ double define_name(std::string var, double val){
     return val;
 }
 
-//returns operations into token stream and assigns numbers to value
-Token Token_stream::get()
-{
-    if (full) {
-        full = false;
-        return buffer;
-    }
-
-    char ch;
-    std::cin >> ch;
-
-    switch (ch) {
-    case '+':
-    case '-':
-    case '*':
-    case '/':
-    case '(':
-    case ')':
-    case '{':
-    case '}':
-    case print:
-    case printc:
-    case quit:
-    case '!':
-    case '%':
-        return Token{ch};
-
-    default:
-        if (std::isdigit(ch)) {
-            std::cin.putback(ch);
-
-            double val;
-            std::cin >> val;
-
-            return Token{number, val};
-        }
-
-        if (std::isalpha(ch)) {
-        std::string s;
-        s += ch;
-        while (std::cin.get(ch) && (isalpha(ch) || isdigit(ch)))
-            s += ch;
-        std::cin.putback(ch);
-
-        if (s == declkey)
-            return Token{let};
-
-        return Token{name, s};
-        }
-        error("Bad token");
-    }
-}
 
 //declarations
 double statement();
@@ -274,23 +287,44 @@ double primary(){
     case '(': 
         {   double d = expression();
             t = ts.get();
-            if (t.kind != ')')
-            error("')' expected");
+            if (t.kind != ')'){
+                error("')' expected");
+            }
             return d;
         }
     case '{': 
         {   double d = expression();
             t = ts.get();
-            if (t.kind != '}')
-            error("'}' expected");
+            if (t.kind != '}'){
+                error("'}' expected");
+            }
             return d;
         }
     case number: 
         return t.value; 
+    case name:
+        return get_value(t.name);
     case '-':
         return - primary();
     case '+':
         return primary();
+    case sqrt_key:
+        {   t = ts.get();
+
+            if (t.kind != '('){
+                error("'(' expected after sqrt");
+            }
+
+            double d = expression();
+
+            t = ts.get();
+
+            if (t.kind != ')'){
+                error("')' expected after sqrt");
+            }
+
+            return std::sqrt(d);
+        }
     default:
         error("primary expected");
     }
@@ -298,13 +332,21 @@ double primary(){
 
 double declaration(){
     Token t = ts.get();
-    if (t.kind != name)
+
+    if (t.kind != name){
         error ("name expected in declaration");
-        Token t2 = ts.get();
-    if (t2.kind != '=')
+    }
+
+    Token t2 = ts.get();
+
+    if (t2.kind != (print || printc)){
         error("= missing in declaration of ", t.name);
+    }
+
     double d = expression();
+
     define_name(t.name,d);
+
     return d;
 }
 
@@ -350,7 +392,7 @@ void introduction(){
     std::cout << "Welcome to our simple calculator.\n";
     std::cout << "Please enter expressions using floating-point numbers.\n";
     std::cout << "Available operators: +, -, *, /, !, and parentheses.\n";
-    std::cout << "Use '=' to print the result and 'x' to exit.\n";
+    std::cout << "Use "<< print << " or " << printc << " to print the result and " << quit << " to exit.\n";
 }
 
 void clean_up_mess() {
@@ -365,6 +407,7 @@ try {
 
     define_name("pi",3.1415926535);
     define_name("e",2.7182818284);
+    define_name("k", 1000);
 
     while (calculate()){   
     }
