@@ -6,6 +6,14 @@
 #include <exception>
 #include <stdexcept>
 #include <cctype>
+#include <cmath>
+
+constexpr char number = '8';
+constexpr char quit = 'x';
+constexpr char print = '=';
+constexpr char printc = ';';
+constexpr std::string prompt = "> ";
+constexpr std::string result = "= "; 
 
 [[noreturn]] void error(const std::string& e){
     throw std::runtime_error(e);
@@ -20,12 +28,12 @@ public:
 
 };
 
-
 // Token_stream stores a token in a buffer
 class Token_stream {
 public:
     Token get();
     void putback(Token t);
+    void ignore(char c1,char c2);
 
 private:
     bool full {false};
@@ -33,15 +41,11 @@ private:
 };
 
 
-//declarations
-double expression();
-double term();
-double primary();
-double factorial();
-Token_stream ts;
-void print();
-void quit();
-bool calculate();
+class Variable {
+public:
+    std::string name;
+    double value;
+};
 
 //puts a token from input stream into the token stream
 void Token_stream::putback(Token t)
@@ -51,6 +55,18 @@ void Token_stream::putback(Token t)
 
     buffer = t;
     full = true;
+}
+
+void Token_stream::ignore(char c1,char c2){
+    if (full &&  buffer.kind == c1|| buffer.kind == c2) { 
+        full = false;
+        return;
+        }
+    full = false;
+    char ch = 0;
+    while (std::cin>>ch)
+        if (ch == c1 || ch == c2)
+            return;
 }
 
 
@@ -74,9 +90,11 @@ Token Token_stream::get()
     case ')':
     case '{':
     case '}':
-    case '=':
-    case 'x':
+    case print:
+    case printc:
+    case quit:
     case '!':
+    case '%':
         return Token{ch};
 
     default:
@@ -86,16 +104,25 @@ Token Token_stream::get()
             double val;
             std::cin >> val;
 
-            return Token{'8', val};
+            return Token{number, val};
         }
 
         error("Bad token");
     }
 }
 
+//declarations
+double expression();
+double term();
+double primary();
+double factorial();
+bool calculate();
+void introduction();
+void clean_up_mess();
+Token_stream ts;
+
 
 //parser functions
-//handles + and -
 double expression(){
     double left = term(); 
     Token t = ts.get(); 
@@ -116,7 +143,6 @@ double expression(){
     }
 }
 
-//handles * and /
 double term(){
     double left = factorial();
     Token t = ts.get();
@@ -129,8 +155,16 @@ double term(){
         case '/':
             { double d = factorial();
             if (d == 0)
-                error("divide by zero");
+                error(" can not divide by zero");
             left /= d;
+            t = ts.get();
+            break;
+            }
+        case '%':
+            { double d = factorial();
+            if (d == 0)
+                error(" can not divide by zero");
+            left = fmod(left,d);
             t = ts.get();
             break;
             }
@@ -141,7 +175,6 @@ double term(){
     }
 }
 
-//handles !
 double factorial(){
     double left = primary();
     Token t = ts.get();
@@ -162,7 +195,6 @@ double factorial(){
     return result;
 }
 
-//handles () and numbers
 double primary(){
     Token t = ts.get();
     switch (t.kind) {
@@ -180,60 +212,73 @@ double primary(){
             error("'}' expected");
             return d;
         }
-    case '8': 
+    case number: 
         return t.value; 
+    case '-':
+        return - primary();
+    case '+':
+        return primary();
     default:
         error("primary expected");
     }
 }
 
+void clean_up_mess() {
+    ts.ignore(print,printc);
+
+}
 
 //other functions
-void print(double val)
-{
-    std::cout << "=" << val << '\n';
-}
-
-bool quit(Token t)
-{
-    return t.kind == 'x';
-}
-
-bool calculate()
-{
+bool calculate(){
     double val = 0;
 
-    while (std::cin) {
-        Token t = ts.get();
+    while (std::cin)  {
+        try{
+            std::cout << prompt;
+            Token t = ts.get();
 
-        switch (t.kind) {
-        case 'x':
-            return false;  // tell main to quit
+            switch (t.kind) {
+            case quit:
+                return false;  
 
-        case '=':
-            std::cout << "=" << val << '\n';
-            return true;   // expression finished
+            case print:
+                std::cout << result << val << '\n';
+                return true;   
+        
+            case printc:
+                std::cout << result << val << '\n';
+                return true;
 
-        default:
-            ts.putback(t);
-            val = expression();
-            break;
+            default:
+                ts.putback(t);
+                val = expression();
+                break;
+            }
         }
+        catch (const std::exception& e) {
+            std::cerr << e.what() << '\n'; 
+            clean_up_mess();
+        }
+
     }
 
     return false;
+    
 }
 
-int main()
-try {
-    double val = 0;  
+void introduction(){
     std::cout << "Welcome to our simple calculator.\n";
     std::cout << "Please enter expressions using floating-point numbers.\n";
     std::cout << "Available operators: +, -, *, /, !, and parentheses.\n";
     std::cout << "Use '=' to print the result and 'x' to exit.\n";
+}
 
-    while (calculate()){
 
+int main()
+try {
+    introduction();
+
+    while (calculate()){   
     }
 
     return 0;
