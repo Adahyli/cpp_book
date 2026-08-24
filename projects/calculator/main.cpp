@@ -12,13 +12,15 @@ constexpr char number = '8';
 constexpr char quit = 'q';
 constexpr char print = '=';
 constexpr char printc = ';';
+const std::string quitkey = "exit";
 constexpr std::string prompt = "> ";
 constexpr std::string result = "= "; 
 const char name = 'a'; 
-const char let = 'L'; 
-const std::string declkey = "let"; 
+const char let = '#'; 
 const char sqrt_key = 's';
 const std::string sqrtkey = "sqrt";
+const char pow_key = 'p';
+const std::string powkey = "pow";
 
 
 [[noreturn]] void error(const std::string& e){
@@ -103,6 +105,8 @@ Token Token_stream::get()
     case quit:
     case '!':
     case '%':
+    case ',':
+    case let:
         return Token{ch};
 
     default:
@@ -124,16 +128,23 @@ Token Token_stream::get()
 
                 s += ch;
             }
-            if (std::cin)
+
+            if (std::cin){
                 std::cin.putback(ch);
+            }
 
-            if (s == declkey)
-                return Token{let};
-
-            if (s == sqrtkey)
+            if (s == sqrtkey){
                 return Token{sqrt_key};
+            }
 
+            if (s == powkey){
+                return Token{pow_key};
+            }
 
+            if (s == quitkey){
+                return Token{quit};
+            }
+            
             return Token{name, s};
         }
         error("Bad token");
@@ -321,6 +332,10 @@ double primary(){
 
             if (t.kind != ')'){
                 error("')' expected after sqrt");
+            }
+
+             if (d < 0){
+                error("square root of negative number");
             }
 
             return std::sqrt(d);
