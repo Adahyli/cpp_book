@@ -14,17 +14,30 @@ constexpr char print = '=';
 constexpr char printc = ';';
 constexpr std::string prompt = "> ";
 constexpr std::string result = "= "; 
+const char name = 'a'; 
+const char let = 'L'; 
+const std::string declkey = "let"; 
+
 
 [[noreturn]] void error(const std::string& e){
     throw std::runtime_error(e);
 }
 
+[[noreturn]] void error(const std::string& s1, const std::string& s2)
+{
+    throw std::runtime_error(s1 + s2);
+}
+
+
 class Token{
 public:
  char kind; 
  double value; 
+ std::string name;
+ Token() :kind{0} {}
  Token(char k) :kind{k}, value{0.0}{} 
  Token(char k, double v) :kind{k}, value{v}{}
+ Token(char ch, std::string n) :kind{ch}, name{n} { }
 
 };
 
@@ -38,13 +51,6 @@ public:
 private:
     bool full {false};
     Token buffer {' '};
-};
-
-
-class Variable {
-public:
-    std::string name;
-    double value;
 };
 
 //puts a token from input stream into the token stream
@@ -69,6 +75,44 @@ void Token_stream::ignore(char c1,char c2){
             return;
 }
 
+
+class Variable {
+public:
+    std::string name;
+    double value;
+};
+
+std::vector<Variable> var_table;
+
+double get_value(std::string s){
+    for (const Variable& v : var_table)
+        if (v.name == s)
+            return v.value;
+    error("trying to read undefined variable\n ", s);
+}
+
+void set_value(std::string s, double d){
+    for (Variable& v : var_table)
+        if (v.name == s) {
+            v.value = d;
+            return;
+        }
+    error("trying to write undefined variable ", s);
+}
+
+bool is_declared(std::string var){
+    for (const Variable& v : var_table)
+        if (v.name == var)
+            return true;
+    return false;
+}
+
+double define_name(std::string var, double val){
+    if (is_declared(var))
+        error(var," declared twice");
+    var_table.push_back(Variable{var,val});
+    return val;
+}
 
 //returns operations into token stream and assigns numbers to value
 Token Token_stream::get()
@@ -107,22 +151,51 @@ Token Token_stream::get()
             return Token{number, val};
         }
 
+        if (std::isalpha(ch)) {
+        std::string s;
+        s += ch;
+        while (std::cin.get(ch) && (isalpha(ch) || isdigit(ch)))
+            s += ch;
+        std::cin.putback(ch);
+
+        if (s == declkey)
+            return Token{let};
+
+        return Token{name, s};
+        }
         error("Bad token");
     }
 }
 
 //declarations
+double statement();
 double expression();
 double term();
 double primary();
 double factorial();
+double declaration();
 bool calculate();
 void introduction();
 void clean_up_mess();
+double get_value(std::string s);
+void set_value(std::string s, double d);
+bool is_declared(std::string var);
+double define_name(std::string var, double val);
 Token_stream ts;
 
 
 //parser functions
+double statement(){
+    Token t = ts.get();
+    switch (t.kind) {
+    case let:
+        return declaration();
+    default:
+        ts.putback(t);
+        return expression();
+    }
+}
+
 double expression(){
     double left = term(); 
     Token t = ts.get(); 
@@ -223,9 +296,16 @@ double primary(){
     }
 }
 
-void clean_up_mess() {
-    ts.ignore(print,printc);
-
+double declaration(){
+    Token t = ts.get();
+    if (t.kind != name)
+        error ("name expected in declaration");
+        Token t2 = ts.get();
+    if (t2.kind != '=')
+        error("= missing in declaration of ", t.name);
+    double d = expression();
+    define_name(t.name,d);
+    return d;
 }
 
 //other functions
@@ -251,7 +331,7 @@ bool calculate(){
 
             default:
                 ts.putback(t);
-                val = expression();
+                val = statement();
                 break;
             }
         }
@@ -273,10 +353,18 @@ void introduction(){
     std::cout << "Use '=' to print the result and 'x' to exit.\n";
 }
 
+void clean_up_mess() {
+    ts.ignore(print,printc);
+
+}
+
 
 int main()
 try {
     introduction();
+
+    define_name("pi",3.1415926535);
+    define_name("e",2.7182818284);
 
     while (calculate()){   
     }
