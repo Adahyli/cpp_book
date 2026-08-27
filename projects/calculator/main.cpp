@@ -192,15 +192,15 @@ double define_name(std::string var, double val){
 
 
 //declarations
-double statement();
-double expression();
-double term();
-double primary();
-double factorial();
-double declaration();
-bool calculate();
+double statement(Token_stream& ts);
+double expression(Token_stream& ts);
+double term(Token_stream& ts);
+double primary(Token_stream& ts);
+double factorial(Token_stream& ts);
+double declaration(Token_stream& ts);
+bool calculate(Token_stream& ts);
 void introduction();
-void clean_up_mess();
+void clean_up_mess(Token_stream& ts);
 double get_value(std::string s);
 void set_value(std::string s, double d);
 bool is_declared(std::string var);
@@ -209,28 +209,28 @@ Token_stream ts;
 
 
 //parser functions
-double statement(){
+double statement(Token_stream& ts){
     Token t = ts.get();
     switch (t.kind) {
     case let:
-        return declaration();
+        return declaration(ts);
     default:
         ts.putback(t);
-        return expression();
+        return expression(ts);
     }
 }
 
-double expression(){
-    double left = term(); 
+double expression(Token_stream& ts){
+    double left = term(ts); 
     Token t = ts.get(); 
     while (true) {
         switch (t.kind) {
         case '+':
-            left += term(); 
+            left += term(ts); 
             t = ts.get();
             break;
         case '-':
-            left -= term(); 
+            left -= term(ts); 
             t = ts.get();
             break;
         default:
@@ -240,17 +240,17 @@ double expression(){
     }
 }
 
-double term(){
-    double left = factorial();
+double term(Token_stream& ts){
+    double left = factorial(ts);
     Token t = ts.get();
     while (true) {
         switch (t.kind) {
         case '*':
-            left *= factorial();
+            left *= factorial(ts);
             t = ts.get();
             break;
         case '/':
-            { double d = factorial();
+            { double d = factorial(ts);
             if (d == 0)
                 error(" can not divide by zero");
             left /= d;
@@ -258,7 +258,7 @@ double term(){
             break;
             }
         case '%':
-            { double d = factorial();
+            { double d = factorial(ts);
             if (d == 0)
                 error(" can not divide by zero");
             left = fmod(left,d);
@@ -272,8 +272,8 @@ double term(){
     }
 }
 
-double factorial(){
-    double left = primary();
+double factorial(Token_stream& ts){
+    double left = primary(ts);
     Token t = ts.get();
 
     if (t.kind != '!') {
@@ -292,11 +292,11 @@ double factorial(){
     return result;
 }
 
-double primary(){
+double primary(Token_stream& ts){
     Token t = ts.get();
     switch (t.kind) {
     case '(': 
-        {   double d = expression();
+        {   double d = expression(ts);
             t = ts.get();
             if (t.kind != ')'){
                 error("')' expected");
@@ -304,7 +304,7 @@ double primary(){
             return d;
         }
     case '{': 
-        {   double d = expression();
+        {   double d = expression(ts);
             t = ts.get();
             if (t.kind != '}'){
                 error("'}' expected");
@@ -316,9 +316,9 @@ double primary(){
     case name:
         return get_value(t.name);
     case '-':
-        return - primary();
+        return - primary(ts);
     case '+':
-        return primary();
+        return primary(ts);
     case sqrt_key:
         {   t = ts.get();
 
@@ -326,7 +326,7 @@ double primary(){
                 error("'(' expected after sqrt");
             }
 
-            double d = expression();
+            double d = expression(ts);
 
             t = ts.get();
 
@@ -345,7 +345,7 @@ double primary(){
     }
 }
 
-double declaration(){
+double declaration(Token_stream& ts){
     Token t = ts.get();
 
     if (t.kind != name){
@@ -354,11 +354,11 @@ double declaration(){
 
     Token t2 = ts.get();
 
-    if (t2.kind != (print || printc)){
+    if (t2.kind != print && t2.kind != printc){
         error("= missing in declaration of ", t.name);
     }
 
-    double d = expression();
+    double d = expression(ts);
 
     define_name(t.name,d);
 
@@ -366,7 +366,7 @@ double declaration(){
 }
 
 //other functions
-bool calculate(){
+bool calculate(Token_stream& ts){
     double val = 0;
 
     while (std::cin)  {
@@ -388,13 +388,13 @@ bool calculate(){
 
             default:
                 ts.putback(t);
-                val = statement();
+                val = statement(ts);
                 break;
             }
         }
         catch (const std::exception& e) {
             std::cerr << e.what() << '\n'; 
-            clean_up_mess();
+            clean_up_mess(ts);
         }
 
     }
@@ -410,7 +410,7 @@ void introduction(){
     std::cout << "Use "<< print << " or " << printc << " to print the result and " << quit << " to exit.\n";
 }
 
-void clean_up_mess() {
+void clean_up_mess(Token_stream& ts) {
     ts.ignore(print,printc);
 
 }
@@ -418,13 +418,14 @@ void clean_up_mess() {
 
 int main()
 try {
+    
     introduction();
 
     define_name("pi",3.1415926535);
     define_name("e",2.7182818284);
     define_name("k", 1000);
 
-    while (calculate()){   
+    while (calculate(ts)){   
     }
 
     return 0;
