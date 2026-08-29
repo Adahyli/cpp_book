@@ -158,16 +158,26 @@ public:
     double value;
 };
 
-std::vector<Variable> var_table;
+class Symbol_table {
+public:
+    double get_value(std::string s);
+    void set_value(std::string s, double d);
+    bool is_declared(std::string var);
+    double define_name(std::string var, double val);
 
-double get_value(std::string s){
+private:
+    std::vector<Variable> var_table;
+};
+
+
+double Symbol_table::get_value(std::string s){
     for (const Variable& v : var_table)
         if (v.name == s)
             return v.value;
     error("trying to read undefined variable\n ", s);
 }
 
-void set_value(std::string s, double d){
+void Symbol_table::set_value(std::string s, double d){
     for (Variable& v : var_table)
         if (v.name == s) {
             v.value = d;
@@ -176,14 +186,14 @@ void set_value(std::string s, double d){
     error("trying to write undefined variable ", s);
 }
 
-bool is_declared(std::string var){
+bool Symbol_table::is_declared(std::string var){
     for (const Variable& v : var_table)
         if (v.name == var)
             return true;
     return false;
 }
 
-double define_name(std::string var, double val){
+double Symbol_table::define_name(std::string var, double val){
     if (is_declared(var))
         error(var," declared twice");
     var_table.push_back(Variable{var,val});
@@ -192,45 +202,41 @@ double define_name(std::string var, double val){
 
 
 //declarations
-double statement(Token_stream& ts);
-double expression(Token_stream& ts);
-double term(Token_stream& ts);
-double primary(Token_stream& ts);
-double factorial(Token_stream& ts);
-double declaration(Token_stream& ts);
-bool calculate(Token_stream& ts);
+double statement(Token_stream& ts, Symbol_table& symbols);
+double expression(Token_stream& ts, Symbol_table& symbols);
+double term(Token_stream& ts, Symbol_table& symbols);
+double primary(Token_stream& ts, Symbol_table& symbols);
+double factorial(Token_stream& ts, Symbol_table& symbols);
+double declaration(Token_stream& ts, Symbol_table& symbols);
+bool calculate(Token_stream& ts, Symbol_table& symbols);
 void introduction();
 void clean_up_mess(Token_stream& ts);
-double get_value(std::string s);
-void set_value(std::string s, double d);
-bool is_declared(std::string var);
-double define_name(std::string var, double val);
-Token_stream ts;
+
 
 
 //parser functions
-double statement(Token_stream& ts){
+double statement(Token_stream& ts, Symbol_table& symbols){
     Token t = ts.get();
     switch (t.kind) {
     case let:
-        return declaration(ts);
+        return declaration(ts, symbols);
     default:
         ts.putback(t);
-        return expression(ts);
+        return expression(ts, symbols);
     }
 }
 
-double expression(Token_stream& ts){
-    double left = term(ts); 
+double expression(Token_stream& ts, Symbol_table& symbols){
+    double left = term(ts, symbols); 
     Token t = ts.get(); 
     while (true) {
         switch (t.kind) {
         case '+':
-            left += term(ts); 
+            left += term(ts, symbols); 
             t = ts.get();
             break;
         case '-':
-            left -= term(ts); 
+            left -= term(ts, symbols); 
             t = ts.get();
             break;
         default:
@@ -240,17 +246,17 @@ double expression(Token_stream& ts){
     }
 }
 
-double term(Token_stream& ts){
-    double left = factorial(ts);
+double term(Token_stream& ts, Symbol_table& symbols){
+    double left = factorial(ts, symbols);
     Token t = ts.get();
     while (true) {
         switch (t.kind) {
         case '*':
-            left *= factorial(ts);
+            left *= factorial(ts, symbols);
             t = ts.get();
             break;
         case '/':
-            { double d = factorial(ts);
+            { double d = factorial(ts, symbols);
             if (d == 0)
                 error(" can not divide by zero");
             left /= d;
@@ -258,7 +264,7 @@ double term(Token_stream& ts){
             break;
             }
         case '%':
-            { double d = factorial(ts);
+            { double d = factorial(ts, symbols);
             if (d == 0)
                 error(" can not divide by zero");
             left = fmod(left,d);
@@ -272,8 +278,8 @@ double term(Token_stream& ts){
     }
 }
 
-double factorial(Token_stream& ts){
-    double left = primary(ts);
+double factorial(Token_stream& ts, Symbol_table& symbols){
+    double left = primary(ts, symbols);
     Token t = ts.get();
 
     if (t.kind != '!') {
@@ -292,11 +298,11 @@ double factorial(Token_stream& ts){
     return result;
 }
 
-double primary(Token_stream& ts){
+double primary(Token_stream& ts, Symbol_table& symbols){
     Token t = ts.get();
     switch (t.kind) {
     case '(': 
-        {   double d = expression(ts);
+        {   double d = expression(ts, symbols);
             t = ts.get();
             if (t.kind != ')'){
                 error("')' expected");
@@ -304,7 +310,7 @@ double primary(Token_stream& ts){
             return d;
         }
     case '{': 
-        {   double d = expression(ts);
+        {   double d = expression(ts, symbols);
             t = ts.get();
             if (t.kind != '}'){
                 error("'}' expected");
@@ -314,11 +320,11 @@ double primary(Token_stream& ts){
     case number: 
         return t.value; 
     case name:
-        return get_value(t.name);
+        return symbols.get_value(t.name);
     case '-':
-        return - primary(ts);
+        return - primary(ts, symbols);
     case '+':
-        return primary(ts);
+        return primary(ts, symbols);
     case sqrt_key:
         {   t = ts.get();
 
@@ -326,7 +332,7 @@ double primary(Token_stream& ts){
                 error("'(' expected after sqrt");
             }
 
-            double d = expression(ts);
+            double d = expression(ts, symbols);
 
             t = ts.get();
 
@@ -345,7 +351,7 @@ double primary(Token_stream& ts){
     }
 }
 
-double declaration(Token_stream& ts){
+double declaration(Token_stream& ts, Symbol_table& symbols){
     Token t = ts.get();
 
     if (t.kind != name){
@@ -358,15 +364,15 @@ double declaration(Token_stream& ts){
         error("= missing in declaration of ", t.name);
     }
 
-    double d = expression(ts);
+    double d = expression(ts, symbols);
 
-    define_name(t.name,d);
+    symbols.define_name(t.name,d);
 
     return d;
 }
 
 //other functions
-bool calculate(Token_stream& ts){
+bool calculate(Token_stream& ts, Symbol_table& symbols){
     double val = 0;
 
     while (std::cin)  {
@@ -388,7 +394,7 @@ bool calculate(Token_stream& ts){
 
             default:
                 ts.putback(t);
-                val = statement(ts);
+                val = statement(ts, symbols);
                 break;
             }
         }
@@ -418,14 +424,16 @@ void clean_up_mess(Token_stream& ts) {
 
 int main()
 try {
-    
+    Token_stream ts;
+    Symbol_table symbols;
+
     introduction();
 
-    define_name("pi",3.1415926535);
-    define_name("e",2.7182818284);
-    define_name("k", 1000);
+    symbols.define_name("pi",3.1415926535);
+    symbols.define_name("e",2.7182818284);
+    symbols.define_name("k", 1000);
 
-    while (calculate(ts)){   
+    while (calculate(ts, symbols)){   
     }
 
     return 0;
