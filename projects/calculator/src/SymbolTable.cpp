@@ -1,6 +1,4 @@
 
-#pragma once
-
 #include "SymbolTable.h"
 #include "Error.h"
 

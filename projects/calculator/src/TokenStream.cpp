@@ -8,7 +8,12 @@
 #include <string>
 
 Token_stream::Token_stream(std::istream& input)
-    : input{input}{
+    : input{&input}{
+}
+
+void Token_stream::set_input(std::istream& in)
+{
+    input = &in;
 }
 
 void Token_stream::putback(Token t)
@@ -27,7 +32,7 @@ void Token_stream::ignore(char c1, char c2) {
     }
     full = false;
     char ch = 0;
-    while (input >> ch) {
+    while ((*input) >> ch) {
         if (ch == c1 || ch == c2)
             return;
     }
@@ -42,7 +47,7 @@ Token Token_stream::get()
     }
 
     char ch;
-    input >> ch;
+    (*input) >> ch;
 
     switch (ch) {
     case '+':
@@ -64,10 +69,10 @@ Token Token_stream::get()
 
     default:
         if (std::isdigit(ch)) {
-            input.putback(ch);
+            input->putback(ch);
 
             double val;
-            input >> val;
+            (*input) >> val;
 
             return Token{ number, val };
         }
@@ -75,7 +80,7 @@ Token Token_stream::get()
         if (std::isalpha(ch)) {
             std::string s;
             s += ch;
-            while (input.get(ch) && (isalpha(ch) || isdigit(ch))) {
+            while (input->get(ch) && (isalpha(ch) || isdigit(ch))) {
                 if (!std::isalpha(ch) && !std::isdigit(ch))
                     break;
 
@@ -83,7 +88,7 @@ Token Token_stream::get()
             }
 
             if (input) {
-                input.putback(ch);
+                input->putback(ch);
             }
 
             if (s == sqrtkey) {

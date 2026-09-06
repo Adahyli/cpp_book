@@ -1,6 +1,4 @@
 
-#pragma once
-
 #include "Calculator.h"
 
 #include "Constants.h"
