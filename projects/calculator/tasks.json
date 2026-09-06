@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Calculator",
+            "type": "shell",
+            "command": "cmake --build --preset gcc-debug",
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Run Calculator",
+            "type": "shell",
+            "command": ".\\out\\build\\gcc-debug\\calculator.exe",
+            "dependsOn": "Build Calculator",
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

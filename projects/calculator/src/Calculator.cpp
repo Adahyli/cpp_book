@@ -221,7 +221,22 @@ bool Calculator::calculate() {
                 ts.set_input(input_file);
 
                 return true;
-            }     
+            }  
+            
+            case write:
+            {
+                std::string filename = ts.get_filename();
+
+                output_file.open(filename);
+
+                if (!output_file)
+                    error("cannot open output file");
+
+                out.rdbuf(output_file.rdbuf());
+                err.rdbuf(output_file.rdbuf());
+
+                return true;
+            }
 
             default:
                 ts.putback(t);
