@@ -6,6 +6,7 @@
 
 #include <istream>
 #include <ostream>
+#include <fstream>
 
 class Calculator {
 public:
@@ -23,6 +24,9 @@ private:
 
     std::ostream& out;
     std::ostream& err;
+
+    std::ifstream input_file;
+    std::ofstream output_file;
 
     double statement();
     double expression();

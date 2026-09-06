@@ -14,6 +14,10 @@ inline constexpr char let = '#';
 inline constexpr char sqrt_key = 's';
 inline constexpr char pow_key = 'p';
 
+inline constexpr char read = 'x';
+inline constexpr char write = 'y';
+inline constexpr char eof = 'E';
+
 inline const std::string quitkey = "exit";
 inline const std::string sqrtkey = "sqrt";
 inline const std::string powkey = "pow";

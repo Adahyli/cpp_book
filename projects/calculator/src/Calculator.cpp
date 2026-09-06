@@ -196,6 +196,9 @@ bool Calculator::calculate() {
             case quit:
                 return false;
 
+            case eof:
+                return false;
+
             case print:
                 out << result << val << '\n';
                 return true;
@@ -203,6 +206,22 @@ bool Calculator::calculate() {
             case printc:
                 out << result << val << '\n';
                 return true;
+
+            case read:
+            {
+                std::string filename = ts.get_filename();
+
+                out << "Opening: " << filename << '\n';
+
+                input_file.open(filename);
+
+                if (!input_file)
+                    error("cannot open input file");
+
+                ts.set_input(input_file);
+
+                return true;
+            }     
 
             default:
                 ts.putback(t);

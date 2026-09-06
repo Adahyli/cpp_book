@@ -4,14 +4,14 @@
 #include "Token.h"
 
 #include <istream>
+#include <string>
 
 class Token_stream {
 public:
-    explicit Token_stream(std::istream& input)
-    : input{&input}
-    {}
+    explicit Token_stream(std::istream& input);
 
     void set_input(std::istream& in);
+    std::string get_filename();
 
     Token get();
     void putback(Token t);

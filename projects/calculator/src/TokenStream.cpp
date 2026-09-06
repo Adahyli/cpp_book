@@ -11,18 +11,22 @@ Token_stream::Token_stream(std::istream& input)
     : input{&input}{
 }
 
-void Token_stream::set_input(std::istream& in)
-{
+void Token_stream::set_input(std::istream& in){
     input = &in;
 }
 
-void Token_stream::putback(Token t)
-{
+void Token_stream::putback(Token t){
     if (full)
         error("putback() into a full buffer");
 
     buffer = t;
     full = true;
+}
+
+std::string Token_stream::get_filename(){
+    std::string filename;
+    (*input) >> filename;
+    return filename;
 }
 
 void Token_stream::ignore(char c1, char c2) {
@@ -47,7 +51,9 @@ Token Token_stream::get()
     }
 
     char ch;
-    (*input) >> ch;
+    if (!(*input >> ch))
+    return Token{eof};
+
 
     switch (ch) {
     case '+':
@@ -61,6 +67,8 @@ Token Token_stream::get()
     case print:
     case printc:
     case quit:
+    case read:
+    case write:
     case '!':
     case '%':
     case ',':
