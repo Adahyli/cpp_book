@@ -1,0 +1,47 @@
+#include <initializer_list>
+
+class Vector {
+/*
+ invariant:
+ if 0<=n<sz, elem[n] is element n
+ sz<=space;
+ if sz<space there is space for (space-sz) doubles after elem[sz-1]
+*/
+    int sz; // the size
+    double* elem; // pointer to the elements (or 0)
+    int space; // number of elements plus number of free slots
+public:
+    Vector() : sz{0}, elem{nullptr}, space{0} { }
+    explicit Vector(int s) :sz{s}, elem{new double[s]}, space{s}
+    {
+        for (int i=0; i<sz; ++i)
+            elem[i]=0; // elements are initialized
+    }
+
+    Vector(std::initializer_list<double> lst); // list initializer
+    Vector& operator=(std::initializer_list<double> lst); // list assignment
+
+    Vector(const Vector&); // copy constructor
+    Vector& operator=(const vector&); // copy assignment
+
+    Vector(Vector&&); // move constructor
+    Vector& operator=(Vector&&); // move assignment
+
+    ~Vector() { delete[] elem; } // destructor
+
+    double& operator[ ](int n) { return elem[n]; } // access: return reference
+    const double& operator[](int n) const { return elem[n]; }
+
+    int size() const { return sz; }
+    int capacity() const { return space; }
+
+    void resize(int newsize); // growth
+    void push_back(double d);
+    void reserve(int newalloc);
+
+    double* begin() const { return elem; } // iteration support
+    double* end() const { return elem+sz; }
+};
+
+bool operator==(Vector& v1, Vector &v2);
+bool operator!=(Vector& v1, Vector &v2);
