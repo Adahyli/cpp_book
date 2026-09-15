@@ -11,20 +11,17 @@ public:
     {
     }
 
-    explicit Ptr(const Ptr& arg)
-    : p{new double{*arg.p}}
-    {
-    }
+    Ptr(const Ptr& arg);
+    Ptr& operator=(const Ptr& arg);
 
 
     ~Ptr(){
         delete p;
     }
 
-    Ptr& operator=(const Ptr& arg);
+
 
     Ptr(Ptr&& arg);
-
     Ptr& operator=(Ptr&& arg);
 
     double& operator*();
