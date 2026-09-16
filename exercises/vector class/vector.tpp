@@ -3,15 +3,17 @@
 
 #include <algorithm>
 
-Vector::Vector(std::initializer_list<double> lst)
-    :sz{lst.end() - lst.begin()}, space{sz * 2}, elem {new double [space]}
+template <typename T>
+Vector<T>::Vector(std::initializer_list<T> lst)
+    :sz{lst.end() - lst.begin()}, space{sz * 2}, elem {new T [space]}
 {
     std::copy(lst.begin(), lst.end(), elem);
 }
 
-Vector& Vector::operator=(std::initializer_list<double> lst){
+template <typename T>
+Vector<T>& Vector<T>::operator=(std::initializer_list<T> lst){
 
-    double* p = new double[lst.size()];
+    T* p = new T[lst.size()];
 
     std::copy(lst.begin(), lst.end(), p);
 
@@ -24,15 +26,17 @@ Vector& Vector::operator=(std::initializer_list<double> lst){
 
 }
 
-Vector::Vector(const Vector& arg)
-    :sz{arg.sz}, space{arg.space}, elem{new double[arg.sz]}
+template <typename T>
+Vector<T>::Vector(const Vector& arg)
+    :sz{arg.sz}, space{arg.space}, elem{new T[arg.sz]}
 {
     std::copy(arg.elem, arg.elem + sz, elem);
 }
 
-Vector& Vector::operator=(const Vector& arg){
+template <typename T>
+Vector<T>& Vector<T>::operator=(const Vector& arg){
     
-    double* p = new double[arg.sz];
+    T* p = new T[arg.sz];
 
     std::copy(arg.elem, arg.elem + arg.sz, p);
 
@@ -44,7 +48,8 @@ Vector& Vector::operator=(const Vector& arg){
     return *this;
 }
 
-Vector::Vector(Vector&& arg)
+template <typename T>
+Vector<T>::Vector(Vector&& arg)
     :sz{arg.sz}, space {arg.space}, elem{arg.elem}
 {
     arg.sz = 0;
@@ -53,7 +58,8 @@ Vector::Vector(Vector&& arg)
   
 }
 
- Vector& Vector::operator=(Vector&& arg){
+template <typename T>
+Vector<T>& Vector<T>::operator=(Vector&& arg){
     if (this != &arg){
         delete[] elem;
         elem = arg.elem;
@@ -65,13 +71,14 @@ Vector::Vector(Vector&& arg)
         arg.sz = 0;
     }
     return *this;
- }
+}
 
-void Vector::reserve(int newalloc){
+template <typename T>
+void Vector<T>::reserve(int newalloc){
     if (newalloc <= space)
         return;
 
-    double* p = new double [newalloc];
+    T* p = new T [newalloc];
     for (int i = 0; i < sz; ++i)
         p[i] = elem[i];
     delete[] elem;
@@ -80,19 +87,21 @@ void Vector::reserve(int newalloc){
 
 }
 
-void Vector::resize(int newsize){
+template <typename T>
+void Vector<T>::resize(int newsize){
     reserve(newsize);
     for (int i = sz; i < newsize; ++i)
         elem[i] = 0;
     sz = newsize;
 }
 
-void Vector::push_back(double d){
+template <typename T>
+void Vector<T>::push_back(T t){
     if (space == 0)
         reserve(8);
     else if (sz==space)
         reserve(space * 2);
-    elem[sz] = d;
+    elem[sz] = t;
     ++sz;
     
 }

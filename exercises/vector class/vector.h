@@ -3,27 +3,28 @@
 
 #include <initializer_list>
 
+template<typename T>
 class Vector {
 /*
  invariant:
  if 0<=n<sz, elem[n] is element n
  sz<=space;
- if sz<space there is space for (space-sz) doubles after elem[sz-1]
+ if sz<space there is space for (space-sz) Ts after elem[sz-1]
 */
     int sz; // the size
     int space; // number of elements plus number of free slots
-    double* elem; // pointer to the elements (or 0)
+    T* elem; // pointer to the elements (or 0)
     
 public:
     Vector() : sz{0}, elem{nullptr}, space{0} { }
-    explicit Vector(int s) :sz{s}, space{s * 2}, elem{new double[s]}
+    explicit Vector(int s) :sz{s}, space{s * 2}, elem{new T[s]}
     {
         for (int i=0; i<sz; ++i)
             elem[i]=0; // elements are initialized
     }
 
-    Vector(std::initializer_list<double>); // list initializer
-    Vector& operator=(std::initializer_list<double>); // list assignment
+    Vector(std::initializer_list<T>); // list initializer
+    Vector& operator=(std::initializer_list<T>); // list assignment
 
     Vector(const Vector&); // copy constructor
     Vector& operator=(const Vector&); // copy assignment
@@ -33,8 +34,8 @@ public:
 
     ~Vector() { delete[] elem; } // destructor
 
-    double& operator[ ](int n) { return elem[n]; } // access: return reference
-    const double& operator[](int n) const { return elem[n]; }
+    T& operator[ ](int n) { return elem[n]; } // access: return reference
+    const T& operator[](int n) const { return elem[n]; }
 
     int size() const { return sz; }
     int capacity() const { return space; }
@@ -42,12 +43,15 @@ public:
     
     void reserve(int newalloc);
     void resize(int newsize); // growth
-    void push_back(double d);
+    void push_back(T d);
     
 
-    double* begin() const { return elem; } // iteration support
-    double* end() const { return elem+sz; }
+    T* begin() const { return elem; } // iteration support
+    T* end() const { return elem+sz; }
 };
 
-bool operator==(Vector& v1, Vector &v2);
-bool operator!=(Vector& v1, Vector &v2);
+template<typename T>
+bool operator==(const Vector<T>& v1, const Vector<T> &v2);
+
+template<typename T>
+bool operator!=(const Vector<T>& v1, Vector<T> &v2);
