@@ -3,14 +3,17 @@
 
 #include <algorithm>
 
-template <typename T>
-Vector<T>::Vector(std::initializer_list<T> lst)
-    :sz{lst.end() - lst.begin()}, space{sz * 2}, elem {new T [space]}
+
+
+
+template <typename T, typename A>
+Vector<T>::Vector(std::initializer_list<T,A> lst)
+    :r.sz{lst.end() - lst.begin()}, r.space{sz * 2}, elem {new T [space]}
 {
     std::copy(lst.begin(), lst.end(), elem);
 }
 
-template <typename T>
+template <typename T, typename A>
 Vector<T>& Vector<T>::operator=(std::initializer_list<T> lst){
 
     T* p = new T[lst.size()];

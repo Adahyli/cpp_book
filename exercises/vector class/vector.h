@@ -2,25 +2,30 @@
 #pragma once
 
 #include <initializer_list>
+#include <memory>
 
-template<typename T>
+template<typename T, typename A = std::allocator<T>>
+struct Vector_rep {
+    A alloc; 
+    int sz; 
+    T* elem; 
+    int space; 
+    Vector_rep(const A& a, int n)
+        : alloc{ a }, sz{ n }, elem{ alloc.allocate(n) }, space{ n } { }
+    ~Vector_rep() { alloc.deallocate(elem, space); }
+};
+
+template<typename T, typename A = std::allocator<T>>
 class Vector {
-/*
- invariant:
- if 0<=n<sz, elem[n] is element n
- sz<=space;
- if sz<space there is space for (space-sz) Ts after elem[sz-1]
-*/
-    int sz; // the size
-    int space; // number of elements plus number of free slots
-    T* elem; // pointer to the elements (or 0)
+
+    Vector_rep<T,A> r;
     
 public:
     Vector() : sz{0}, elem{nullptr}, space{0} { }
-    explicit Vector(int s) :sz{s}, space{s * 2}, elem{new T[s]}
+    explicit Vector(int s) : r{A(),s}
     {
-        for (int i=0; i<sz; ++i)
-            elem[i]=0; // elements are initialized
+        for (int i=0; i < sz; ++i)
+            r.elem[i] = 0; 
     }
 
     Vector(std::initializer_list<T>); // list initializer
