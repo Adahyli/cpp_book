@@ -2,67 +2,50 @@
 #include "vector.h"
 
 #include <algorithm>
-
-
+#include <memory>
 
 
 template <typename T, typename A>
-Vector<T>::Vector(std::initializer_list<T,A> lst)
-    :r.sz{lst.end() - lst.begin()}, r.space{sz * 2}, elem {new T [space]}
+Vector<T,A>::Vector(std::initializer_list<T> lst)
+    :r{A{}, static_cast<int>(lst.size())}
 {
-    std::copy(lst.begin(), lst.end(), elem);
+    std::uninitialized_copy(lst.begin(), lst.end(), r.elem);
 }
 
 template <typename T, typename A>
-Vector<T>& Vector<T>::operator=(std::initializer_list<T> lst){
+Vector<T,A>& Vector<T,A>::operator=(std::initializer_list<T> lst){
 
-    T* p = new T[lst.size()];
-
-    std::copy(lst.begin(), lst.end(), p);
-
-    delete[] elem;
-
-    elem = p;
-    sz = lst.size();
-
+    Vector<T,A> temp{lst};
+    std::swap(*this, temp);
     return *this;
 
 }
 
-template <typename T>
-Vector<T>::Vector(const Vector& arg)
+template <typename T, typename A>
+Vector<T,A>::Vector(const Vector& arg)
     :sz{arg.sz}, space{arg.space}, elem{new T[arg.sz]}
 {
-    std::copy(arg.elem, arg.elem + sz, elem);
+    std::copy(arg.elem, arg.elem + sz, r.elem);
 }
 
-template <typename T>
-Vector<T>& Vector<T>::operator=(const Vector& arg){
-    
-    T* p = new T[arg.sz];
+template<typename T, typename A>
+Vector<T,A>& Vector<T,A>::operator=(Vector<T,A> arg){
 
-    std::copy(arg.elem, arg.elem + arg.sz, p);
-
-    delete[] elem;
-
-    elem = p;
-    sz = arg.sz;
-
+    std::swap(*this, arg); 
     return *this;
+
 }
 
-template <typename T>
-Vector<T>::Vector(Vector&& arg)
-    :sz{arg.sz}, space {arg.space}, elem{arg.elem}
+
+template <typename T, typename A>
+Vector<T,A>::Vector(Vector&& arg)
+    : r{std::move(arg.r)}
 {
-    arg.sz = 0;
-    arg.space = 0;
-    arg.elem = nullptr;
-  
 }
 
-template <typename T>
-Vector<T>& Vector<T>::operator=(Vector&& arg){
+
+template <typename T, typename A>
+Vector<T,A>& Vector<T,A>::operator=(Vector&& arg){
     if (this != &arg){
         delete[] elem;
         elem = arg.elem;
@@ -76,8 +59,8 @@ Vector<T>& Vector<T>::operator=(Vector&& arg){
     return *this;
 }
 
-template <typename T>
-void Vector<T>::reserve(int newalloc){
+template <typename T, typename A>
+void Vector<T,A>::reserve(int newalloc){
     if (newalloc <= space)
         return;
 
@@ -90,27 +73,27 @@ void Vector<T>::reserve(int newalloc){
 
 }
 
-template <typename T>
-void Vector<T>::resize(int newsize){
+template <typename T, typename A>
+void Vector<T,A>::resize(int newsize){
     reserve(newsize);
     for (int i = sz; i < newsize; ++i)
         elem[i] = 0;
     sz = newsize;
 }
 
-template <typename T>
-void Vector<T>::push_back(T t){
-    if (space == 0)
+template <typename T, typename A>
+void Vector<T,A>::push_back(T t){
+    if (r.space == 0)
         reserve(8);
-    else if (sz==space)
-        reserve(space * 2);
-    elem[sz] = t;
-    ++sz;
+    else if (r.sz == r.space)
+        reserve(r.space * 2);
+    std::allocator_traits<A>::construct(r.alloc, r.elem + r.sz, t);
+    ++r.sz;
     
 }
 
-template<typename T>
-bool operator==(const Vector<T>& v1, const Vector<T> &v2){
+template<typename T, typename A>
+bool operator==(const Vector<T,A>& v1, const Vector<T,A> &v2){
     if (v1.size() != v2.size())
         return false;
 
@@ -121,7 +104,8 @@ bool operator==(const Vector<T>& v1, const Vector<T> &v2){
     return true;
 }
 
-template<typename T>
-bool operator!=(const Vector<T>& v1, const Vector<T> &v2){
+template<typename T, typename A>
+bool operator!=(const Vector<T,A>& v1, const Vector<T,A> &v2){
     return !(v1 == v2);
 }
+

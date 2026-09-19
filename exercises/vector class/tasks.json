@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Vector",
+            "type": "shell",
+            "command": "D:\\Users\\mingw64\\bin\\g++.exe",
+            "args": [
+                "-std=c++20",
+                "-Wall",
+                "-Wextra",
+                "-g",
+                "${workspaceFolder}/main.cpp",
+                "${workspaceFolder}/vector.tpp",
+                "-o",
+                "${workspaceFolder}/main.exe"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
